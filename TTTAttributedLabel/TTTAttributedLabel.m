@@ -237,8 +237,12 @@ static inline NSAttributedString * NSAttributedStringByScalingFontSize(NSAttribu
                 fontName = font.fontName;
                 pointSize = font.pointSize;
             } else {
+#ifndef APPORTABLE
                 fontName = (NSString *)CFBridgingRelease(CTFontCopyName((__bridge CTFontRef)font, kCTFontPostScriptNameKey));
                 pointSize = CTFontGetSize((__bridge CTFontRef)font);
+#else
+                return;
+#endif
             }
 
             [mutableAttributedString removeAttribute:(NSString *)kCTFontAttributeName range:range];
@@ -294,7 +298,11 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         CFRelease(path);
     }
 
+#ifndef APPORTABLE
     CGSize suggestedSize = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, rangeToSize, NULL, constraints, NULL);
+#else
+    CGSize suggestedSize = CGSizeMake(299, 12);
+#endif
 
     return CGSizeMake(CGFloat_ceil(suggestedSize.width), CGFloat_ceil(suggestedSize.height));
 }
@@ -302,7 +310,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 @interface TTTAttributedLabel ()
 @property (readwrite, nonatomic, copy) NSAttributedString *inactiveAttributedText;
 @property (readwrite, nonatomic, copy) NSAttributedString *renderedAttributedText;
+#ifndef APPORTABLE
 @property (readwrite, nonatomic, strong) NSDataDetector *dataDetector;
+#endif
 @property (readwrite, nonatomic, strong) NSArray *links;
 @property (readwrite, nonatomic, strong) NSTextCheckingResult *activeLink;
 @property (readwrite, nonatomic, strong) NSArray *accessibilityElements;
@@ -318,7 +328,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 @dynamic text;
 @synthesize attributedText = _attributedText;
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000 && !defined(APPORTABLE)
 
 #ifndef kCFCoreFoundationVersionNumber_iOS_7_0
 #define kCFCoreFoundationVersionNumber_iOS_7_0 847.2
@@ -548,11 +558,13 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 - (void)setEnabledTextCheckingTypes:(NSTextCheckingTypes)enabledTextCheckingTypes {
     _enabledTextCheckingTypes = enabledTextCheckingTypes;
 
+#ifndef APPORTABLE
     if (self.enabledTextCheckingTypes) {
         self.dataDetector = [NSDataDetector dataDetectorWithTypes:self.enabledTextCheckingTypes error:nil];
     } else {
         self.dataDetector = nil;
     }
+#endif
 }
 
 - (void)addLinkWithTextCheckingResult:(NSTextCheckingResult *)result
@@ -714,7 +726,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     return idx;
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000 && !defined(APPORTABLE)
 - (CGRect)boundingRectForCharacterRange:(NSRange)range {
     NSMutableAttributedString *mutableAttributedString = [self.attributedText mutableCopy];
 
@@ -1044,6 +1056,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     self.activeLink = nil;
 
     self.links = [NSArray array];
+#ifndef APPORTABLE
     if (self.attributedText && self.enabledTextCheckingTypes) {
 #if __IPHONE_OS_VERSION_MIN_REQUIRED < 50000
         __unsafe_unretained __typeof(self)weakSelf = self;
@@ -1066,8 +1079,8 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
             }
         });
     }
-
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
+#endif
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000 && !defined(APPORTABLE)
     if (&NSLinkAttributeName) {
         [self.attributedText enumerateAttribute:NSLinkAttributeName inRange:NSMakeRange(0, self.attributedText.length) options:0 usingBlock:^(id value, __unused NSRange range, __unused BOOL *stop) {
             if (value) {
@@ -1272,7 +1285,7 @@ afterInheritingLabelAttributesAndConfiguringWithBlock:(NSMutableAttributedString
 
 #pragma mark - UIAccessibilityElement
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000 && !defined(APPORTABLE)
 
 - (BOOL)isAccessibilityElement {
     return NO;
@@ -1365,7 +1378,7 @@ afterInheritingLabelAttributesAndConfiguringWithBlock:(NSMutableAttributedString
     return [self sizeThatFits:[super intrinsicContentSize]];
 }
 
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000
+#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 70000 && !defined(APPORTABLE)
 - (void)tintColorDidChange {
     if (!self.inactiveLinkAttributes || [self.inactiveLinkAttributes count] == 0) {
         return;
